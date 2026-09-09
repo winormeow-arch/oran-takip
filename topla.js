@@ -231,8 +231,23 @@ function depoyaYaz() {
             timeZone: 'Europe/Istanbul', dateStyle: 'short', timeStyle: 'short'
         }).format(new Date());
         execSync(`git commit -q -m "oran: ${zaman}"`, { stdio: 'inherit' });
-        execSync('git pull --rebase --autostash -q', { stdio: 'inherit' });
-        execSync('git push -q', { stdio: 'inherit' });
+
+        // Baska bir calisma ayni dosyalara yazmis olabilir.
+        // Cakismada bizim surumumuz kazansin; rebase patlarsa yarim birakma.
+        try {
+            execSync('git pull --rebase -X theirs --autostash -q', { stdio: 'inherit' });
+        } catch {
+            try { execSync('git rebase --abort', { stdio: 'ignore' }); } catch {}
+            console.log('  cakisma: rebase iptal edildi, sonraki turda tekrar denenecek');
+            return;
+        }
+
+        try {
+            execSync('git push -q', { stdio: 'inherit' });
+        } catch {
+            console.log('  push reddedildi, sonraki turda tekrar denenecek');
+            return;
+        }
         console.log('  depoya yazıldı');
     } catch (e) {
         console.log('  depoya yazılamadı: ' + e.message);
