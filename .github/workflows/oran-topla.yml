@@ -2,7 +2,7 @@ name: Oran topla
 
 on:
   schedule:
-    - cron: '*/10 * * * *'
+    - cron: '*/30 * * * *'      # yarım saatte bir tetiklenmeye çalışır
   workflow_dispatch:
 
 permissions:
@@ -15,7 +15,7 @@ concurrency:
 jobs:
   topla:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 70
     steps:
       - uses: actions/checkout@v4
 
@@ -23,18 +23,14 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Bulteni cek
-        run: node topla.js
-
-      - name: Depoya yaz
+      - name: Git kimligi
         run: |
           git config user.name  "oran-bot"
           git config user.email "oran-bot@users.noreply.github.com"
-          git add data
-          if git diff --staged --quiet; then
-            echo "Degisiklik yok"
-            exit 0
-          fi
-          git commit -m "oran: $(TZ=Europe/Istanbul date '+%Y-%m-%d %H:%M')"
-          git pull --rebase --autostash origin ${{ github.ref_name }} || true
-          git push
+
+      - name: Ornekleri topla
+        env:
+          TUR: '11'        # kac ornek alinsin
+          ARA: '300'       # ornekler arasi saniye (300 = 5 dakika)
+          GIT_YAZ: '1'
+        run: node topla.js
