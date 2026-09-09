@@ -10,6 +10,7 @@ const BULTEN = 'https://bulten.nesine.com/api/bulten/getprebultenfull';
 const DURUM_YOL   = 'data/durum.json';
 const HAREKET_YOL = 'data/hareket.json';
 const GECMIS_DIZIN = 'data/gecmis';
+const KAPANIS_DIZIN = 'data/kapanis';
 
 // Bir hareketin listeye girmesi için gereken en küçük değişim (%)
 const ESIK = 2;
@@ -156,11 +157,28 @@ async function birTur() {
         }
     }
 
-    // Başlamış maçları at (dosya şişmesin)
+    // Başlayan maçın son oranını kapanış olarak dondur, sonra listeden düş
     const simdiMs = simdi.getTime();
+    const kapanisYol = `${KAPANIS_DIZIN}/${gun}.json`;
+    const kapanis = await jsonOku(kapanisYol, {});
+    let donan = 0;
+
     for (const [kod, mac] of Object.entries(durum.maclar)) {
-        if (mac.baslangic && mac.baslangic < simdiMs - 3 * 3600 * 1000) delete durum.maclar[kod];
+        if (!mac.baslangic || mac.baslangic > simdiMs) continue;
+        if (!kapanis[kod]) {
+            kapanis[kod] = {
+                ev: mac.ev, dep: mac.dep, tarih: mac.tarih, saat: mac.saat,
+                baslangic: mac.baslangic, donduruldu: simdi.toISOString(),
+                oranlar: Object.fromEntries(Object.entries(mac.oranlar).map(
+                    ([a, k]) => [a, { ilk: k.i, kapanis: k.s, dip: k.a, tepe: k.u, adet: k.n }]
+                ))
+            };
+            donan++;
+        }
+        if (mac.baslangic < simdiMs - 3 * 3600 * 1000) delete durum.maclar[kod];
     }
+
+    if (donan) await jsonYaz(kapanisYol, kapanis);
 
     durum.guncelleme = simdi.toISOString();
     await jsonYaz(DURUM_YOL, durum);
