@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Avrupa oranları toplayıcı (OddsPapi).
 Modlar: kesif  -> şirket, market, lig ve takım listelerini indirir
-        sabah  -> keskin şirketler + o günün sıradaki dönüşümlü şirketleri
-        aksam  -> sadece keskin şirketler
+        sabah  -> 1 ücretli istekle maç listesi + ücretsiz geçmiş-oran uç noktasıyla tüm şirketler
+        aksam  -> aynısı, sadece akşam şirketleri
 Sadece Python standart kütüphanesi kullanır."""
 import csv, datetime as dt, json, os, sys, time, urllib.error, urllib.parse, urllib.request
 
@@ -27,7 +27,7 @@ class ApiError(Exception):
         self.code = code
 
 
-def get(path, params=None, billable=True):
+def get(path, params=None, billable=True, pause=1.3, _retry=True):
     global USED
     p = dict(params or {})
     p["apiKey"] = KEY
@@ -37,11 +37,15 @@ def get(path, params=None, billable=True):
         with urllib.request.urlopen(req, timeout=90) as r:
             data = json.load(r)
     except urllib.error.HTTPError as e:
+        body = e.read().decode("utf-8", "replace")[:400]
         if billable:
             USED += 1
-        raise ApiError(e.code, e.read().decode("utf-8", "replace")[:400])
+        if e.code == 429 and _retry and "REQUEST_LIMIT" not in body:
+            time.sleep(12)
+            return get(path, params, billable, pause, False)
+        raise ApiError(e.code, body)
     finally:
-        time.sleep(1.3)  # uç nokta bekleme süresi 1 sn
+        time.sleep(pause)
     if billable:
         USED += 1
     return data
@@ -227,46 +231,93 @@ def select_tournaments(cfg):
     return out[: cfg["maks_turnuva"]], cats
 
 
-def fetch_odds(slugs_wanted, tours, cfg, idx):
-    """API her istekte tek şirket kabul ediyor: şirket başına 1 istek."""
-    fixtures = {}
-    ids = [str(t["tournamentId"]) for t in tours]
-    step = max(1, cfg["parca"])
-    for w in slugs_wanted:
-        slug = resolve(w, idx)
-        if not slug:
-            log(f"Şirket bulunamadı: {w} (avrupa/sabit/bookmakers.json listesine bakıp ayarlar.json'daki adı düzelt)")
-            continue
-        for i in range(0, len(ids), step):
-            if not can_spend(cfg):
-                return fixtures
-            chunk = ids[i:i + step]
+def list_fixtures(cfg, tours):
+    """Tek (ücretli) istekle önümüzdeki saatlerin tüm futbol maçlarını alır, seçili liglere süzer."""
+    frm = NOW - dt.timedelta(minutes=10)
+    to = NOW + dt.timedelta(hours=min(cfg["pencere_saat"], 47))
+    if not can_spend(cfg):
+        return []
+    try:
+        data = get("fixtures", {"sportId": 10, "from": frm.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                                "to": to.strftime("%Y-%m-%dT%H:%M:%SZ"), "statusId": 0, "hasOdds": "true"}, pause=2.2)
+    except ApiError as e:
+        log(f"Maç listesi alınamadı: {e}")
+        return []
+    ids = {str(t["tournamentId"]) for t in tours}
+    fx = [f for f in as_list(data) if isinstance(f, dict) and str(f.get("tournamentId")) in ids]
+    fx.sort(key=lambda f: f.get("startTime") or "")
+    log(f"API'de {len(as_list(data))} maç var, seçili liglerde {len(fx)} maç.")
+    return fx[: cfg["maks_mac"]]
+
+
+def latest_and_open(history):
+    rows = [h for h in history if isinstance(h, dict) and h.get("price")]
+    if not rows:
+        return None
+    rows.sort(key=lambda h: h.get("createdAt") or "")
+    act = [h for h in rows if h.get("active", True)]
+    last = (act or rows)[-1]
+    return {"price": last["price"], "changedAt": last.get("createdAt", ""), "open": rows[0]["price"], "active": True}
+
+
+def fetch_history(fixtures, sirketler, cfg, idx):
+    """Ücretsiz geçmiş-oran uç noktasıyla her maçın oranlarını şirket şirket doldurur."""
+    slugs = []
+    for w in sirketler:
+        s_ = resolve(w, idx)
+        if s_:
+            slugs.append(s_)
+        else:
+            log(f"Şirket bulunamadı: {w}")
+    per_call = cfg.get("istek_basina_sirket", 3)
+    deadline = time.time() + cfg["maks_dakika"] * 60
+    out = {}
+    for f in fixtures:
+        out[f["fixtureId"]] = dict(f, bookmakerOdds={})
+    groups = [slugs[i:i + per_call] for i in range(0, len(slugs), per_call)]
+    gi = 0
+    while gi < len(groups):  # önce tüm maçlar için 1. grup (Pinnacle), sonra diğerleri
+        g = groups[gi]
+        got, fail = 0, 0
+        for fid in list(out):
+            if time.time() > deadline:
+                log(f"Süre sınırı ({cfg['maks_dakika']} dk) doldu, kalan şirketler atlandı.")
+                return out
             try:
-                data = get("odds-by-tournaments", {"tournamentIds": ",".join(chunk), "bookmaker": slug, "oddsFormat": "decimal"})
+                data = get("historical-odds", {"fixtureId": fid, "bookmakers": ",".join(g)}, billable=False, pause=5.3)
             except ApiError as e:
-                log(f"Oran isteği hata verdi ({slug}): {e}")
+                if e.code == 400 and "bookmaker" in str(e).lower() and len(g) > 1 and per_call > 1:
+                    log("API tek istekte tek şirket istiyor; tek tek çekmeye geçiliyor.")
+                    per_call = 1
+                    rest = [x for gg in groups[gi:] for x in gg]
+                    groups = groups[:gi] + [[x] for x in rest]
+                    gi -= 1
+                    break
+                fail += 1
+                if fail <= 3:
+                    log(f"{fid} ({','.join(g)}) alınamadı: {e}")
+                if e.code == 429 and "REQUEST_LIMIT" in str(e):
+                    return out
                 continue
-            n = 0
-            for f in as_list(data):
-                if not isinstance(f, dict) or "fixtureId" not in f:
-                    continue
-                cur = fixtures.setdefault(f["fixtureId"], {k: v for k, v in f.items() if k != "bookmakerOdds"})
-                cur.setdefault("bookmakerOdds", {}).update(f.get("bookmakerOdds") or {})
-                n += 1
-            log(f"{slug}: {n} maç geldi.")
-    return fixtures
-
-
-def todays_bookmakers(cfg, mode):
-    keskin = cfg["keskin_sirketler"]
-    if mode != "sabah":
-        return keskin
-    pool, k = cfg["donusumlu_sirketler"], cfg["gunluk_donusumlu_sayi"]
-    if not pool or k <= 0:
-        return keskin
-    start = (NOW.astimezone(TR).timetuple().tm_yday * k) % len(pool)
-    pick = [pool[(start + j) % len(pool)] for j in range(min(k, len(pool)))]
-    return keskin + pick
+            bks = (data or {}).get("bookmakers") or {}
+            for bk, bd in bks.items():
+                mk = {}
+                for mid, md in ((bd or {}).get("markets") or {}).items():
+                    outs = {}
+                    for oid, od in ((md or {}).get("outcomes") or {}).items():
+                        hist = ((od or {}).get("players") or {}).get("0")
+                        lo = latest_and_open(hist if isinstance(hist, list) else [hist] if hist else [])
+                        if lo:
+                            outs[oid] = {"players": {"0": lo}}
+                    if outs:
+                        mk[mid] = {"outcomes": outs}
+                if mk:
+                    out[fid]["bookmakerOdds"][bk] = {"markets": mk}
+                    got += 1
+        else:
+            log(f"{', '.join(g)}: {len(out)} maçta {got} şirket-maç oranı geldi.")
+        gi += 1
+    return out
 
 
 def parse_time(s):
@@ -305,15 +356,11 @@ def main():
     if not tours:
         log("Ayarlardaki ülkelerle eşleşen lig yok. Kullanılabilir ülke kodları: " + ", ".join(cats[:200]))
     idx = bookmaker_index()
-    todays = todays_bookmakers(cfg, mode)
-    log("Bugünkü şirketler: " + ", ".join(todays))
-    fx = fetch_odds(todays, tours, cfg, idx)
-
+    sirketler = cfg["sirketler"] if mode == "sabah" else cfg["aksam_sirketler"]
+    log("Şirketler: " + ", ".join(sirketler))
+    fixtures = list_fixtures(cfg, tours)
+    fx = fetch_history(fixtures, sirketler, cfg, idx) if fixtures else {}
     names = participant_names()
-    missing = {str(f.get(k)) for f in fx.values() for k in ("participant1Id", "participant2Id")} - set(names)
-    if missing and age_days(os.path.join(SABIT, "participants.json")) > 0.9:
-        if refresh("participants", "participants", {"sportId": 10}, cfg):
-            names = participant_names()
     finish(mode, fx, tours, names, cfg)
 
 
@@ -330,9 +377,10 @@ def finish(mode, fx, tours, names, cfg=None):
                 continue
             t = tmap.get(str(f.get("tournamentId")), {})
             local = st.astimezone(TR)
-            home = names.get(str(f.get("participant1Id")), str(f.get("participant1Id")))
-            away = names.get(str(f.get("participant2Id")), str(f.get("participant2Id")))
-            base = [local.strftime("%d.%m.%Y"), local.strftime("%H:%M"), t.get("categoryName", ""), t.get("tournamentName", ""), home, away, fid]
+            home = f.get("participant1Name") or names.get(str(f.get("participant1Id")), str(f.get("participant1Id")))
+            away = f.get("participant2Name") or names.get(str(f.get("participant2Id")), str(f.get("participant2Id")))
+            base = [local.strftime("%d.%m.%Y"), local.strftime("%H:%M"), f.get("categoryName") or t.get("categoryName", ""),
+                    f.get("tournamentName") or t.get("tournamentName", ""), home, away, fid]
             per = {}  # (market, bookmaker) -> {outcome: price}
             for bk, bo in (f.get("bookmakerOdds") or {}).items():
                 if not isinstance(bo, dict) or bo.get("suspended"):
@@ -347,7 +395,7 @@ def finish(mode, fx, tours, names, cfg=None):
                         price = pl.get("price")
                         if not price or not pl.get("active", True) or price <= 1:
                             continue
-                        rows.append(base + [bk, m.get("marketName"), m.get("handicap"), onames.get(str(oid), oid), price, pl.get("changedAt", "")])
+                        rows.append(base + [bk, m.get("marketName"), m.get("handicap"), onames.get(str(oid), oid), pl.get("open", ""), price, pl.get("changedAt", "")])
                         per.setdefault((str(mid), bk), {})[onames.get(str(oid), str(oid))] = price
             # uzlaşı: 1X2, 2.5 Alt/Üst, KG
             c = {"tarih": base[0], "saat": base[1], "ulke": base[2], "lig": base[3], "ev": home, "deplasman": away, "fixtureId": fid}
@@ -388,7 +436,7 @@ def finish(mode, fx, tours, names, cfg=None):
             os.makedirs(os.path.join(ROOT, "gunluk"), exist_ok=True)
             with open(os.path.join(ROOT, "gunluk", stamp + ".csv"), "w", newline="", encoding="utf-8-sig") as fh:
                 w = csv.writer(fh, delimiter=";")
-                w.writerow(["tarih", "saat", "ulke", "lig", "ev", "deplasman", "fixtureId", "sirket", "market", "cizgi", "secim", "oran", "degisim_utc"])
+                w.writerow(["tarih", "saat", "ulke", "lig", "ev", "deplasman", "fixtureId", "sirket", "market", "cizgi", "secim", "acilis_oran", "son_oran", "degisim_utc"])
                 w.writerows(rows)
         if cons:
             cons.sort(key=lambda c: (c["tarih"], c["saat"]))
@@ -403,7 +451,7 @@ def finish(mode, fx, tours, names, cfg=None):
     lines = [f"# Son çalışma: {stamp} ({mode})", ""] + [f"- {s}" for s in LOG]
     if idx and cfg:
         lines += ["", "## Ayarlardaki şirketler", ""]
-        for w in cfg.get("keskin_sirketler", []) + cfg.get("donusumlu_sirketler", []):
+        for w in cfg.get("sirketler", []):
             lines.append(f"- {w} → {resolve(w, idx) or 'BULUNAMADI'}")
     with open(os.path.join(ROOT, "durum.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(lines) + "\n")
