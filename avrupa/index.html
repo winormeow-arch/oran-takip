@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Avrupa Oran Panosu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF0F2; --card:#FFFFFF; --ink:#18202C; --soft:#5F6978; --line:#D9DDE3; --rail:#F6F7F9;
+  --navy:#1F3A5F; --navy-ink:#F3F6FA;
+  --best:#FFE9A6; --best-ink:#6B4B00;
+  --val:#157A4E; --val-bg:#DDF2E6; --up:#157A4E; --down:#B83A2A;
+  --seg1:#1F3A5F; --seg2:#8A94A3; --seg3:#C9862B;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161D; --card:#1A212B; --ink:#E7ECF2; --soft:#98A3B3; --line:#2B3440; --rail:#151B23;
+    --navy:#0B1B2E; --navy-ink:#E7ECF2;
+    --best:#4A3A0E; --best-ink:#FFD66B;
+    --val:#5FD39A; --val-bg:#173628; --up:#5FD39A; --down:#FF8A75;
+    --seg1:#7FA7D9; --seg2:#5C6675; --seg3:#E0A64E;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11161D; --card:#1A212B; --ink:#E7ECF2; --soft:#98A3B3; --line:#2B3440; --rail:#151B23;
+  --navy:#0B1B2E; --navy-ink:#E7ECF2;
+  --best:#4A3A0E; --best-ink:#FFD66B;
+  --val:#5FD39A; --val-bg:#173628; --up:#5FD39A; --down:#FF8A75;
+  --seg1:#7FA7D9; --seg2:#5C6675; --seg3:#E0A64E;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-variant-numeric:tabular-nums;-webkit-text-size-adjust:100%}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--seg3);outline-offset:2px}
+.cond{font-stretch:75%}
+
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--navy);color:var(--navy-ink)}
+.hbar{max-width:920px;margin:0 auto;padding:12px 16px 10px}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.brand h1{margin:0;font-size:20px;white-space:nowrap;font-weight:800;font-stretch:80%;letter-spacing:.2px}
+.brand small{font-size:13px;opacity:.75;white-space:nowrap}
+.tools{display:flex;gap:8px;margin-top:10px;overflow-x:auto;scrollbar-width:none}
+.tools::-webkit-scrollbar{display:none}
+.tools input{flex:1;min-width:150px;border:0;border-radius:8px;padding:9px 12px;background:rgba(255,255,255,.12);color:var(--navy-ink)}
+.tools input::placeholder{color:var(--navy-ink);opacity:.6}
+.chip{border:1px solid rgba(255,255,255,.25);background:transparent;color:var(--navy-ink);border-radius:18px;padding:7px 13px;white-space:nowrap;font-weight:600;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--navy-ink);color:var(--navy);border-color:var(--navy-ink)}
+
+main{max-width:920px;margin:0 auto;padding:6px 12px 60px}
+.day{font-weight:800;font-stretch:80%;font-size:19px;margin:18px 4px 8px}
+.lig{font-size:13px;color:var(--soft);margin:12px 4px 6px;font-weight:600}
+.row{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0 0 6px}
+.row .tm{font-weight:800;font-stretch:80%;font-size:18px}
+.row .tm small{display:block;font-size:11px;font-weight:500;color:var(--soft);font-stretch:100%}
+.row .teams{min-width:0}
+.row .teams div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .teams div:first-child{font-weight:700}
+.row .teams .n{font-size:12px;color:var(--soft)}
+.trio{display:grid;grid-template-columns:repeat(3,46px);gap:4px;text-align:center}
+.trio span{font-size:10px;color:var(--soft);display:block}
+.trio b{display:block;font-weight:700;font-stretch:85%;font-size:15px;background:var(--rail);border-radius:6px;padding:4px 0}
+.empty{padding:28px 16px;text-align:center;color:var(--soft);border:1px dashed var(--line);border-radius:10px;margin:18px 0}
+
+/* detay */
+.back{background:none;border:0;color:var(--navy-ink);font-weight:700;padding:4px 0;font-size:15px}
+.mhead{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px;margin:12px 0}
+.mhead .meta{font-size:13px;color:var(--soft)}
+.mhead h2{margin:4px 0 0;font-size:24px;line-height:1.1;font-weight:800;font-stretch:80%}
+.mhead h2 span{color:var(--soft);font-weight:500}
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:2px 0 8px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{border:1px solid var(--line);background:var(--card);border-radius:18px;padding:7px 13px;white-space:nowrap;font-weight:600;font-size:14px}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.legend{font-size:12.5px;color:var(--soft);margin:2px 4px 10px;display:flex;flex-wrap:wrap;gap:6px 14px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:4px}
+
+.mk{background:var(--card);border:1px solid var(--line);border-radius:12px;margin:0 0 14px;overflow:hidden}
+.mk h3{margin:0;padding:12px 14px 4px;font-size:17px;font-weight:800;font-stretch:85%}
+.prob{padding:4px 14px 12px}
+.prob .bar{display:flex;height:26px;border-radius:6px;overflow:hidden}
+.prob .bar div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;min-width:0;white-space:nowrap;overflow:hidden}
+.prob p{margin:6px 0 0;font-size:12.5px;color:var(--soft)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px 6px;text-align:center;border-top:1px solid var(--line)}
+th{font-size:12px;color:var(--soft);font-weight:600;background:var(--rail)}
+th:first-child,td:first-child{text-align:left;padding-left:14px}
+td:last-child,th:last-child{padding-right:14px}
+td.bk b{display:block;font-weight:700;font-size:14px;white-space:nowrap}
+td.bk small{color:var(--soft);font-size:11px;white-space:nowrap}
+td.o{font-weight:700;font-stretch:85%;font-size:16px;min-width:58px}
+td.o small{display:block;font-weight:500;font-size:11px;font-stretch:100%}
+td.o small.up{color:var(--up)} td.o small.down{color:var(--down)} td.o small.eq{color:var(--soft)}
+td.o.best{background:var(--best);color:var(--best-ink)}
+td.o .v{display:inline-block;background:var(--val-bg);color:var(--val);border-radius:4px;padding:0 4px;font-size:10.5px;font-weight:700;margin-top:2px;font-stretch:100%}
+td.mj{font-size:12.5px;color:var(--soft);white-space:nowrap}
+tr.fair td{background:var(--rail);font-weight:700}
+tr.fair td.bk b{font-size:13px}
+tr.sharp td.bk b::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--seg3);margin-left:6px;vertical-align:1px}
+.foot{font-size:12.5px;color:var(--soft);padding:10px 4px 30px}
+</style>
+</head>
+<body>
+<header>
+  <div class="hbar">
+    <div class="brand"><h1>Avrupa Oran Panosu</h1><small id="upd">Yükleniyor…</small></div>
+    <div class="tools" id="listTools">
+      <input id="q" type="search" placeholder="Takım ya da lig ara" aria-label="Takım ya da lig ara">
+      <button class="chip" data-day="all" aria-pressed="true">Hepsi</button>
+      <button class="chip" data-day="0" aria-pressed="false">Bugün</button>
+      <button class="chip" data-day="1" aria-pressed="false">Yarın</button>
+    </div>
+    <div class="tools" id="detTools" hidden><button class="back" id="back">‹ Maç listesi</button></div>
+  </div>
+</header>
+<main id="app"></main>
+
+<script>
+"use strict";
+const SOURCES=["veri/son.json","https://raw.githubusercontent.com/winormeow-arch/oran-takip/main/avrupa/veri/son.json"];
+const BK={
+  "pinnacle":["Pinnacle","keskin piyasa",1],"sbobet":["SBOBET","Asya, keskin",1],"bet365":["bet365","İngiltere",0],
+  "tipico":["Tipico","Almanya",0],"sisal.it":["Sisal","İtalya",0],"unibet":["Unibet","İsveç",0],
+  "superbet":["Superbet","Romanya",0],"stoiximan":["Stoiximan","Yunanistan",0],"svenskaspel":["Svenska Spel","İsveç",0],
+  "winamax.fr":["Winamax","Fransa",0],"fdj":["FDJ","Fransa",0],"betano":["Betano","Yunanistan",0]
+};
+const GROUPS=[["Maç Sonucu",["ms"]],["Çifte Şans",["cs"]],["Alt/Üst",["au15","au25","au35","au45"]],["Karşılıklı Gol",["kg"]],
+  ["İlk Yarı",["iy","iyau05","iyau15"]],["Handikap",["h10","h01"]]];
+const EXPLAIN={
+  ms:"Maç sonucu: ev sahibi (1), beraberlik (X), deplasman (2).",
+  cs:"Çifte şans: iki sonuçtan biri gelirse kazanır.",
+  kg:"Karşılıklı gol: iki takım da gol atarsa Var.",
+  h10:"Ev sahibi 1-0 önde başlamış sayılır.",h01:"Deplasman 1-0 önde başlamış sayılır."
+};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const f2=x=>x==null?"–":Number(x).toFixed(2);
+const pct=x=>"%"+Math.round(x*100);
+const TZ="Europe/Istanbul";
+const dKey=d=>new Intl.DateTimeFormat("sv-SE",{timeZone:TZ}).format(d);
+const hm=d=>new Intl.DateTimeFormat("tr-TR",{timeZone:TZ,hour:"2-digit",minute:"2-digit"}).format(d);
+const dayName=d=>new Intl.DateTimeFormat("tr-TR",{timeZone:TZ,weekday:"long",day:"numeric",month:"long"}).format(d);
+
+let DATA=null, DAY="all", Q="", CUR_TAB=0;
+
+async function load(){
+  for(const u of SOURCES){
+    try{
+      const r=await fetch(u+(u.startsWith("http")?"?t="+Date.now():""),{cache:"no-store"});
+      if(!r.ok) continue;
+      DATA=await r.json(); break;
+    }catch(e){}
+  }
+  if(!DATA){
+    $("#upd").textContent="Veri alınamadı";
+    $("#app").innerHTML='<div class="empty">Oran dosyası okunamadı. İnternet bağlantını kontrol edip sayfayı yenile. Sorun sürerse GitHub Actions\'taki son çalışmanın başarılı olduğuna bak.</div>';
+    return;
+  }
+  const u=new Date(DATA.olusturma);
+  $("#upd").textContent="Son güncelleme "+hm(u);
+  route();
+}
+
+/* ---------- hesaplar ---------- */
+function marketStats(m){
+  const n=m.s.length, rows=[];
+  for(const [bk,vals] of Object.entries(m.o)){
+    const last=vals.map(v=>v?v[1]:null);
+    const full=last.every(x=>x>1);
+    const over=full?last.reduce((a,x)=>a+1/x,0):null;
+    rows.push({bk,vals,last,full,marj:full?over-1:null});
+  }
+  const probs=rows.filter(r=>r.full).map(r=>{const inv=r.last.map(x=>1/x),s=inv.reduce((a,b)=>a+b,0);return inv.map(x=>x/s);});
+  const fairP=probs.length?Array.from({length:n},(_,i)=>probs.reduce((a,p)=>a+p[i],0)/probs.length):null;
+  const pin=rows.find(r=>r.bk==="pinnacle"&&r.full);
+  const pinP=pin?(()=>{const inv=pin.last.map(x=>1/x),s=inv.reduce((a,b)=>a+b,0);return inv.map(x=>x/s);})():null;
+  const best=Array.from({length:n},(_,i)=>Math.max(0,...rows.map(r=>r.last[i]||0)));
+  rows.sort((a,b)=>(a.marj??9)-(b.marj??9));
+  return {rows,fairP,pinP,best,nFull:probs.length};
+}
+function msOf(match){return match.m.find(x=>x.k==="ms");}
+
+/* ---------- liste ---------- */
+function drawList(){
+  $("#listTools").hidden=false; $("#detTools").hidden=true;
+  const today=dKey(new Date()), tmr=dKey(new Date(Date.now()+864e5));
+  const q=Q.toLocaleLowerCase("tr");
+  const list=DATA.maclar.filter(m=>{
+    const k=dKey(new Date(m.t));
+    if(DAY==="0"&&k!==today) return false;
+    if(DAY==="1"&&k!==tmr) return false;
+    if(q&&!(m.ev+" "+m.dep+" "+m.lig+" "+m.ulke).toLocaleLowerCase("tr").includes(q)) return false;
+    return true;
+  });
+  if(!list.length){
+    $("#app").innerHTML=`<div class="empty">${DATA.maclar.length?"Bu seçime uyan maç yok. Aramayı temizle ya da Hepsi'ni seç.":"Şu an listede maç yok. Bir sonraki toplama sabah 09:00'da."}</div>`;
+    return;
+  }
+  let html="",lastDay="",lastLig="";
+  for(const m of list){
+    const d=new Date(m.t),k=dKey(d);
+    if(k!==lastDay){html+=`<div class="day">${k===today?"Bugün":k===tmr?"Yarın":""} ${esc(dayName(d))}</div>`;lastDay=k;lastLig="";}
+    const lg=m.ulke+" "+m.lig;
+    if(lg!==lastLig){html+=`<div class="lig">${esc(m.ulke)} · ${esc(m.lig)}</div>`;lastLig=lg;}
+    const ms=msOf(m); let trio="";
+    if(ms){const st=marketStats(ms);
+      trio=`<div class="trio">${ms.s.map((s,i)=>`<div><span>${esc(s)}</span><b>${f2(st.best[i]||null)}</b></div>`).join("")}</div>`;}
+    const nb=new Set(m.m.flatMap(x=>Object.keys(x.o))).size;
+    html+=`<button class="row" data-id="${esc(m.id)}"><div class="tm">${hm(d)}<small>${nb} şirket</small></div>
+      <div class="teams"><div>${esc(m.ev)}</div><div>${esc(m.dep)}</div></div>${trio}</button>`;
+  }
+  html+=`<p class="foot">Sağdaki oranlar, maç sonucu için şirketler arasındaki en yüksek oran. Ayrıntı için maça dokun.</p>`;
+  $("#app").innerHTML=html;
+  document.querySelectorAll(".row").forEach(b=>b.onclick=()=>{location.hash="mac/"+encodeURIComponent(b.dataset.id);});
+}
+
+/* ---------- detay ---------- */
+function marketHTML(m){
+  const st=marketStats(m), n=m.s.length;
+  const cols=["var(--seg1)","var(--seg2)","var(--seg3)"];
+  let prob="";
+  if(st.fairP){
+    prob=`<div class="prob"><div class="bar">${st.fairP.map((p,i)=>`<div style="width:${(p*100).toFixed(1)}%;background:${cols[n===2?i*2:i]}">${esc(m.s[i])} ${pct(p)}</div>`).join("")}</div>
+      <p>${st.nFull} şirketin marjı çıkarılmış ortalamasına göre gerçekleşme ihtimalleri.${EXPLAIN[m.k]?" "+EXPLAIN[m.k]:""}</p></div>`;
+  }
+  const fairO=st.fairP?st.fairP.map(p=>1/p):null;
+  const rows=st.rows.map(r=>{
+    const info=BK[r.bk]||[r.bk,"",0];
+    const cells=r.vals.map((v,i)=>{
+      if(!v) return `<td class="o">–</td>`;
+      const [op,la]=v, best=la>=st.best[i]-1e-9;
+      const ch=la>op+1e-9?`<small class="up">▲ ${f2(op)}</small>`:la<op-1e-9?`<small class="down">▼ ${f2(op)}</small>`:`<small class="eq">sabit</small>`;
+      const val=fairO&&la>fairO[i]*1.005?`<br><span class="v">+${((la/fairO[i]-1)*100).toFixed(1)}%</span>`:"";
+      return `<td class="o${best?" best":""}">${f2(la)}${ch}${val}</td>`;
+    }).join("");
+    return `<tr class="${info[2]?"sharp":""}"><td class="bk"><b>${esc(info[0])}</b><small>${esc(info[1])}</small></td>${cells}<td class="mj">${r.marj!=null?"%"+(r.marj*100).toFixed(1):"–"}</td></tr>`;
+  }).join("");
+  const fairRow=fairO?`<tr class="fair"><td class="bk"><b>Adil oran</b><small>tüm şirketler</small></td>${fairO.map(x=>`<td class="o">${f2(x)}</td>`).join("")}<td class="mj">%0</td></tr>`:"";
+  const pinRow=st.pinP?`<tr class="fair"><td class="bk"><b>Pinnacle adil</b><small>keskin referans</small></td>${st.pinP.map(p=>`<td class="o">${f2(1/p)}</td>`).join("")}<td class="mj">%0</td></tr>`:"";
+  return `<section class="mk"><h3>${esc(m.ad)}</h3>${prob}<div class="scroll"><table>
+    <thead><tr><th>Şirket</th>${m.s.map(s=>`<th>${esc(s)}</th>`).join("")}<th>Marj</th></tr></thead>
+    <tbody>${rows}${fairRow}${pinRow}</tbody></table></div></section>`;
+}
+function drawDetail(id){
+  const m=DATA.maclar.find(x=>x.id===id);
+  if(!m){location.hash="";return;}
+  $("#listTools").hidden=true; $("#detTools").hidden=false;
+  const d=new Date(m.t);
+  const avail=GROUPS.map(([ad,keys])=>[ad,m.m.filter(x=>keys.includes(x.k))]).filter(g=>g[1].length);
+  if(CUR_TAB>=avail.length) CUR_TAB=0;
+  $("#app").innerHTML=`<div class="mhead"><div class="meta">${esc(m.ulke)} · ${esc(m.lig)} · ${esc(dayName(d))} ${hm(d)}</div>
+      <h2>${esc(m.ev)} <span>–</span> ${esc(m.dep)}</h2></div>
+    <div class="tabs" role="tablist">${avail.map((g,i)=>`<button class="tab" role="tab" data-i="${i}" aria-selected="${i===CUR_TAB}">${esc(g[0])}</button>`).join("")}</div>
+    <div class="legend"><span><i style="background:var(--best)"></i>En yüksek oran</span><span><i style="background:var(--val-bg)"></i>Adil oranın üstünde (+%)</span><span>▲▼ açılış oranından beri yön</span><span>Marj: şirketin payı, düşük olan daha iyi öder</span></div>
+    <div id="mks">${avail[CUR_TAB][1].map(marketHTML).join("")}</div>
+    <p class="foot">Şirketler en az marjdan en çoğa sıralı. Oranlar ${hm(new Date(DATA.olusturma))} toplamasından.</p>`;
+  document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{CUR_TAB=+b.dataset.i;drawDetail(id);});
+  window.scrollTo(0,0);
+}
+
+/* ---------- yönlendirme ---------- */
+function route(){
+  if(!DATA) return;
+  const h=decodeURIComponent(location.hash.slice(1));
+  if(h.startsWith("mac/")) drawDetail(h.slice(4)); else drawList();
+}
+window.addEventListener("hashchange",()=>{CUR_TAB=0;route();});
+$("#back").onclick=()=>{location.hash="";};
+$("#q").oninput=e=>{Q=e.target.value;drawList();};
+document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
+  DAY=b.dataset.day;document.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed",x===b));drawList();
+});
+load();
+</script>
+</body>
+</html>
