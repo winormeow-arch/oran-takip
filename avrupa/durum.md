@@ -1,11 +1,11 @@
-# Son çalışma: 2026-09-28_0433 (kesif)
+# Son çalışma: 2026-09-28_0440 (kesif)
 
-- Mod: kesif. Kota: 0/250
+- Mod: kesif. Kota: 4/250
 - bookmakers listesi güncellendi.
 - markets listesi güncellendi.
 - tournaments listesi güncellendi.
 - participants listesi güncellendi.
-- Bu çalışmada 4 istek harcandı. Aylık kullanım: 4/250.
+- Bu çalışmada 4 istek harcandı. Aylık kullanım: 8/250.
 
 ## Ayarlardaki şirketler
 
@@ -13,11 +13,11 @@
 - sbobet → sbobet
 - bet365 → bet365
 - tipico → tipico
-- sisal → sisal.it
-- snai → snai.it
+- sisal.it → sisal.it
+- unibet → unibet
 - superbet → superbet
 - stoiximan → stoiximan
 - svenskaspel → svenskaspel
-- winamax → winamax.de
-- betclic → BULUNAMADI
+- winamax.fr → winamax.fr
+- fdj → fdj
 - betano → betano
