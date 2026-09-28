@@ -2,15 +2,15 @@ name: Avrupa oranları
 
 on:
   schedule:
-    - cron: "0 6 * * *"    # 09:00 TSİ: tüm şirketler
-    - cron: "0 15 * * *"   # 18:00 TSİ: sadece keskin şirketler
+    - cron: "0 6 * * *"    # 09:00 TSİ: Pinnacle + günün 5 şirketi
+    - cron: "0 15 * * *"   # 18:00 TSİ: sadece Pinnacle
   workflow_dispatch:
     inputs:
       mod:
-        description: "kesif = listeleri indir, sabah = tüm şirketler, aksam = keskin şirketler"
+        description: "kesif = listeleri indir, sabah = Pinnacle + günün 5 şirketi, aksam = sadece Pinnacle"
         type: choice
         options: [kesif, sabah, aksam]
-        default: kesif
+        default: sabah
 
 permissions:
   contents: write
