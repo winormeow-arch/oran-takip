@@ -1,4 +1,5 @@
 {
+  "tum_ligler": true,
   "sirketler": [
     "pinnacle",
     "sbobet",
@@ -19,8 +20,8 @@
     "bet365"
   ],
   "istek_basina_sirket": 3,
-  "maks_mac": 250,
-  "maks_dakika": 110,
+  "maks_mac": 600,
+  "maks_dakika": 300,
   "ulkeler": [
     "international-clubs",
     "turkiye",
