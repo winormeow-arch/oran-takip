@@ -2,15 +2,15 @@ name: Avrupa oranları
 
 on:
   schedule:
-    - cron: "0 6 * * *"    # 09:00 TSİ: 12 şirket
-    - cron: "0 15 * * *"   # 18:00 TSİ: Pinnacle, SBOBET, bet365
+    - cron: "0 6 * * *"    # 09:00 TSİ: tüm şirketler
+    - cron: "0 15 * * *"   # 18:00 TSİ: sadece keskin şirketler
   workflow_dispatch:
     inputs:
       mod:
-        description: "kesif = listeleri indir, sabah = 12 şirket, aksam = keskin 3 şirket"
+        description: "kesif = listeleri indir, sabah = tüm şirketler, aksam = keskin şirketler"
         type: choice
         options: [kesif, sabah, aksam]
-        default: sabah
+        default: kesif
 
 permissions:
   contents: write
@@ -22,7 +22,7 @@ concurrency:
 jobs:
   topla:
     runs-on: ubuntu-latest
-    timeout-minutes: 130
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
