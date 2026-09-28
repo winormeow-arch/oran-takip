@@ -1,0 +1,46 @@
+name: Avrupa oranları
+
+on:
+  schedule:
+    - cron: "0 6 * * *"    # 09:00 TSİ: tüm şirketler
+    - cron: "0 15 * * *"   # 18:00 TSİ: sadece keskin şirketler
+  workflow_dispatch:
+    inputs:
+      mod:
+        description: "kesif = listeleri indir, sabah = tüm şirketler, aksam = keskin şirketler"
+        type: choice
+        options: [kesif, sabah, aksam]
+        default: kesif
+
+permissions:
+  contents: write
+
+concurrency:
+  group: avrupa-oranlar
+  cancel-in-progress: false
+
+jobs:
+  topla:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Oranları çek
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          MOD: ${{ github.event.inputs.mod || (github.event.schedule == '0 15 * * *' && 'aksam' || 'sabah') }}
+        run: python scripts/avrupa_oranlar.py "$MOD"
+      - name: Depoya kaydet
+        run: |
+          git config user.name "avrupa-oranlar-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add avrupa
+          git commit -m "Avrupa oranları $(TZ=Europe/Istanbul date '+%Y-%m-%d %H:%M')" || exit 0
+          for i in 1 2 3 4 5; do
+            git pull --rebase && git push && exit 0
+            sleep $((i * 5))
+          done
+          exit 1
