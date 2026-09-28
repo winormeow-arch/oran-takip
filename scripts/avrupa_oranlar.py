@@ -208,23 +208,23 @@ def keep_market(m):
 
 # ---------------- oran toplama ----------------
 def select_tournaments(cfg):
-    ts = as_list(rjson(os.path.join(SABIT, "tournaments.json"), []))
-    cats = sorted({str(t.get("categorySlug")) for t in ts if isinstance(t, dict)})
+    ts = [t for t in as_list(rjson(os.path.join(SABIT, "tournaments.json"), [])) if isinstance(t, dict)]
+    cats = sorted({str(t.get("categorySlug")) for t in ts})
     want = [c.lower() for c in cfg["ulkeler"]]
-    sel = []
-    for t in ts:
-        if not isinstance(t, dict):
-            continue
+    per = cfg.get("ulke_basina_lig", 3)
+    extra = cfg.get("ulke_ozel_lig_sayisi", {})
+    sel = {c: [] for c in want}
+    for t in ts:  # API listesi önem sırasına göre geliyor
+        c = str(t.get("categorySlug", "")).lower()
         n = (t.get("tournamentName") or "").lower()
-        if str(t.get("categorySlug", "")).lower() not in want:
-            continue
-        if any(x in n for x in cfg["haric"]):
+        if c not in sel or any(x in n for x in cfg["haric"]):
             continue
         if (t.get("futureFixtures") or 0) + (t.get("upcomingFixtures") or 0) <= 0:
             continue
-        sel.append(t)
-    sel.sort(key=lambda t: (want.index(str(t.get("categorySlug")).lower()), -(t.get("futureFixtures") or 0)))
-    return sel[: cfg["maks_turnuva"]], cats
+        if len(sel[c]) < extra.get(c, per):
+            sel[c].append(t)
+    out = [t for c in want for t in sel[c]]
+    return out[: cfg["maks_turnuva"]], cats
 
 
 def fetch_odds(groups, tours, cfg, idx):
