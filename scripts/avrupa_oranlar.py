@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Avrupa oranları toplayıcı (OddsPapi).
 Modlar: kesif  -> şirket, market, lig ve takım listelerini indirir
-        sabah  -> tüm şirket gruplarının maç önü oranlarını çeker
-        aksam  -> sadece ilk grubun (keskin şirketler) oranlarını çeker
+        sabah  -> keskin şirketler + o günün sıradaki dönüşümlü şirketleri
+        aksam  -> sadece keskin şirketler
 Sadece Python standart kütüphanesi kullanır."""
 import csv, datetime as dt, json, os, sys, time, urllib.error, urllib.parse, urllib.request
 
@@ -227,29 +227,24 @@ def select_tournaments(cfg):
     return out[: cfg["maks_turnuva"]], cats
 
 
-def fetch_odds(groups, tours, cfg, idx):
+def fetch_odds(slugs_wanted, tours, cfg, idx):
+    """API her istekte tek şirket kabul ediyor: şirket başına 1 istek."""
     fixtures = {}
     ids = [str(t["tournamentId"]) for t in tours]
     step = max(1, cfg["parca"])
-    for g in groups:
-        slugs = []
-        for w in g:
-            s = resolve(w, idx)
-            if s:
-                slugs.append(s)
-            else:
-                log(f"Şirket bulunamadı: {w} (avrupa/sabit/bookmakers.json listesine bakıp ayarlar.json'daki adı düzelt)")
-        slugs = slugs[:3]
-        if not slugs:
+    for w in slugs_wanted:
+        slug = resolve(w, idx)
+        if not slug:
+            log(f"Şirket bulunamadı: {w} (avrupa/sabit/bookmakers.json listesine bakıp ayarlar.json'daki adı düzelt)")
             continue
         for i in range(0, len(ids), step):
             if not can_spend(cfg):
                 return fixtures
             chunk = ids[i:i + step]
             try:
-                data = get("odds-by-tournaments", {"tournamentIds": ",".join(chunk), "bookmakers": ",".join(slugs), "oddsFormat": "decimal"})
+                data = get("odds-by-tournaments", {"tournamentIds": ",".join(chunk), "bookmaker": slug, "oddsFormat": "decimal"})
             except ApiError as e:
-                log(f"Oran isteği hata verdi ({','.join(slugs)}): {e}")
+                log(f"Oran isteği hata verdi ({slug}): {e}")
                 continue
             n = 0
             for f in as_list(data):
@@ -258,8 +253,20 @@ def fetch_odds(groups, tours, cfg, idx):
                 cur = fixtures.setdefault(f["fixtureId"], {k: v for k, v in f.items() if k != "bookmakerOdds"})
                 cur.setdefault("bookmakerOdds", {}).update(f.get("bookmakerOdds") or {})
                 n += 1
-            log(f"{', '.join(slugs)}: {n} maç geldi.")
+            log(f"{slug}: {n} maç geldi.")
     return fixtures
+
+
+def todays_bookmakers(cfg, mode):
+    keskin = cfg["keskin_sirketler"]
+    if mode != "sabah":
+        return keskin
+    pool, k = cfg["donusumlu_sirketler"], cfg["gunluk_donusumlu_sayi"]
+    if not pool or k <= 0:
+        return keskin
+    start = (NOW.astimezone(TR).timetuple().tm_yday * k) % len(pool)
+    pick = [pool[(start + j) % len(pool)] for j in range(min(k, len(pool)))]
+    return keskin + pick
 
 
 def parse_time(s):
@@ -297,9 +304,10 @@ def main():
     log(f"Seçilen lig sayısı: {len(tours)}")
     if not tours:
         log("Ayarlardaki ülkelerle eşleşen lig yok. Kullanılabilir ülke kodları: " + ", ".join(cats[:200]))
-    groups = cfg["sirket_gruplari"] if mode == "sabah" else cfg["sirket_gruplari"][:1]
     idx = bookmaker_index()
-    fx = fetch_odds(groups, tours, cfg, idx)
+    todays = todays_bookmakers(cfg, mode)
+    log("Bugünkü şirketler: " + ", ".join(todays))
+    fx = fetch_odds(todays, tours, cfg, idx)
 
     names = participant_names()
     missing = {str(f.get(k)) for f in fx.values() for k in ("participant1Id", "participant2Id")} - set(names)
@@ -395,9 +403,8 @@ def finish(mode, fx, tours, names, cfg=None):
     lines = [f"# Son çalışma: {stamp} ({mode})", ""] + [f"- {s}" for s in LOG]
     if idx and cfg:
         lines += ["", "## Ayarlardaki şirketler", ""]
-        for g in cfg.get("sirket_gruplari", []):
-            for w in g:
-                lines.append(f"- {w} → {resolve(w, idx) or 'BULUNAMADI'}")
+        for w in cfg.get("keskin_sirketler", []) + cfg.get("donusumlu_sirketler", []):
+            lines.append(f"- {w} → {resolve(w, idx) or 'BULUNAMADI'}")
     with open(os.path.join(ROOT, "durum.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(lines) + "\n")
     with open(os.path.join(ROOT, "gecmis.log"), "a", encoding="utf-8") as fh:
