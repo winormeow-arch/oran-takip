@@ -1,18 +1,21 @@
-# Son çalışma: 2026-09-28_0443 (sabah)
+# Son çalışma: 2026-09-28_0450 (sabah)
 
-- Mod: sabah. Kota: 8/250
+- Mod: sabah. Kota: 12/250
 - Seçilen lig sayısı: 52
-- Oran isteği hata verdi (pinnacle,sbobet,bet365): HTTP 400: {"error":{"message":"Invalid number of bookmakers specified.","code":"INVALID_PARAMETER","details":"Please provide exactly one bookmaker using the 'bookmaker' query parameter."}}
-- Oran isteği hata verdi (tipico,sisal.it,unibet): HTTP 400: {"error":{"message":"Invalid number of bookmakers specified.","code":"INVALID_PARAMETER","details":"Please provide exactly one bookmaker using the 'bookmaker' query parameter."}}
-- Oran isteği hata verdi (superbet,stoiximan,svenskaspel): HTTP 400: {"error":{"message":"Invalid number of bookmakers specified.","code":"INVALID_PARAMETER","details":"Please provide exactly one bookmaker using the 'bookmaker' query parameter."}}
-- Oran isteği hata verdi (winamax.fr,fdj,betano): HTTP 400: {"error":{"message":"Invalid number of bookmakers specified.","code":"INVALID_PARAMETER","details":"Please provide exactly one bookmaker using the 'bookmaker' query parameter."}}
-- Bu çalışmada 4 istek harcandı. Aylık kullanım: 12/250.
+- Bugünkü şirketler: pinnacle, tipico, sisal.it, unibet, superbet, stoiximan
+- Oran isteği hata verdi (pinnacle): HTTP 400: {"error":{"message":"Too many tournament IDs specified.","code":"INVALID_PARAMETER","details":"Please provide a maximum of 5 tournament IDs using the 'tournamentIds' query parameter."}}
+- Oran isteği hata verdi (tipico): HTTP 400: {"error":{"message":"Too many tournament IDs specified.","code":"INVALID_PARAMETER","details":"Please provide a maximum of 5 tournament IDs using the 'tournamentIds' query parameter."}}
+- Oran isteği hata verdi (sisal.it): HTTP 400: {"error":{"message":"Too many tournament IDs specified.","code":"INVALID_PARAMETER","details":"Please provide a maximum of 5 tournament IDs using the 'tournamentIds' query parameter."}}
+- Oran isteği hata verdi (unibet): HTTP 400: {"error":{"message":"Too many tournament IDs specified.","code":"INVALID_PARAMETER","details":"Please provide a maximum of 5 tournament IDs using the 'tournamentIds' query parameter."}}
+- Oran isteği hata verdi (superbet): HTTP 400: {"error":{"message":"Too many tournament IDs specified.","code":"INVALID_PARAMETER","details":"Please provide a maximum of 5 tournament IDs using the 'tournamentIds' query parameter."}}
+- Oran isteği hata verdi (stoiximan): HTTP 400: {"error":{"message":"Too many tournament IDs specified.","code":"INVALID_PARAMETER","details":"Please provide a maximum of 5 tournament IDs using the 'tournamentIds' query parameter."}}
+- Bu çalışmada 6 istek harcandı. Aylık kullanım: 18/250.
 
 ## Ayarlardaki şirketler
 
 - pinnacle → pinnacle
-- sbobet → sbobet
 - bet365 → bet365
+- sbobet → sbobet
 - tipico → tipico
 - sisal.it → sisal.it
 - unibet → unibet
