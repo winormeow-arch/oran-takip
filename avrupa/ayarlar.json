@@ -1,0 +1,17 @@
+{
+  "sirket_gruplari": [
+    ["pinnacle", "sbobet", "bet365"],
+    ["tipico", "sisal", "snai"],
+    ["superbet", "stoiximan", "svenskaspel"],
+    ["winamax", "betclic", "betano"]
+  ],
+  "ulkeler": ["england", "spain", "germany", "italy", "france", "turkey", "netherlands", "portugal", "belgium",
+              "scotland", "austria", "switzerland", "greece", "denmark", "sweden", "norway", "poland",
+              "czech-republic", "romania", "croatia", "serbia", "international-clubs"],
+  "haric": ["women", "u17", "u18", "u19", "u20", "u21", "u23", "youth", "reserve", "friendl", "amateur", "futsal"],
+  "maks_turnuva": 60,
+  "parca": 60,
+  "pencere_saat": 36,
+  "maks_istek_calisma": 8,
+  "rezerv_istek": 15
+}
