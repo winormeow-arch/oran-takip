@@ -1,11 +1,12 @@
-# Son çalışma: 2026-09-28_0440 (kesif)
+# Son çalışma: 2026-09-28_0443 (sabah)
 
-- Mod: kesif. Kota: 4/250
-- bookmakers listesi güncellendi.
-- markets listesi güncellendi.
-- tournaments listesi güncellendi.
-- participants listesi güncellendi.
-- Bu çalışmada 4 istek harcandı. Aylık kullanım: 8/250.
+- Mod: sabah. Kota: 8/250
+- Seçilen lig sayısı: 52
+- Oran isteği hata verdi (pinnacle,sbobet,bet365): HTTP 400: {"error":{"message":"Invalid number of bookmakers specified.","code":"INVALID_PARAMETER","details":"Please provide exactly one bookmaker using the 'bookmaker' query parameter."}}
+- Oran isteği hata verdi (tipico,sisal.it,unibet): HTTP 400: {"error":{"message":"Invalid number of bookmakers specified.","code":"INVALID_PARAMETER","details":"Please provide exactly one bookmaker using the 'bookmaker' query parameter."}}
+- Oran isteği hata verdi (superbet,stoiximan,svenskaspel): HTTP 400: {"error":{"message":"Invalid number of bookmakers specified.","code":"INVALID_PARAMETER","details":"Please provide exactly one bookmaker using the 'bookmaker' query parameter."}}
+- Oran isteği hata verdi (winamax.fr,fdj,betano): HTTP 400: {"error":{"message":"Invalid number of bookmakers specified.","code":"INVALID_PARAMETER","details":"Please provide exactly one bookmaker using the 'bookmaker' query parameter."}}
+- Bu çalışmada 4 istek harcandı. Aylık kullanım: 12/250.
 
 ## Ayarlardaki şirketler
 
