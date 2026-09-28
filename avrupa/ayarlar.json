@@ -1,10 +1,8 @@
 {
-  "keskin_sirketler": [
-    "pinnacle"
-  ],
-  "donusumlu_sirketler": [
-    "bet365",
+  "sirketler": [
+    "pinnacle",
     "sbobet",
+    "bet365",
     "tipico",
     "sisal.it",
     "unibet",
@@ -15,7 +13,14 @@
     "fdj",
     "betano"
   ],
-  "gunluk_donusumlu_sayi": 5,
+  "aksam_sirketler": [
+    "pinnacle",
+    "sbobet",
+    "bet365"
+  ],
+  "istek_basina_sirket": 3,
+  "maks_mac": 250,
+  "maks_dakika": 110,
   "ulkeler": [
     "international-clubs",
     "turkiye",
@@ -72,8 +77,7 @@
     "concacaf"
   ],
   "maks_turnuva": 60,
-  "parca": 60,
-  "pencere_saat": 36,
-  "maks_istek_calisma": 7,
+  "pencere_saat": 30,
+  "maks_istek_calisma": 4,
   "rezerv_istek": 15
 }
