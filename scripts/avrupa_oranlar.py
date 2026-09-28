@@ -243,10 +243,17 @@ def list_fixtures(cfg, tours):
     except ApiError as e:
         log(f"Maç listesi alınamadı: {e}")
         return []
-    ids = {str(t["tournamentId"]) for t in tours}
-    fx = [f for f in as_list(data) if isinstance(f, dict) and str(f.get("tournamentId")) in ids]
-    fx.sort(key=lambda f: f.get("startTime") or "")
-    log(f"API'de {len(as_list(data))} maç var, seçili liglerde {len(fx)} maç.")
+    allfx = [f for f in as_list(data) if isinstance(f, dict) and f.get("fixtureId")]
+    if cfg.get("tum_ligler"):
+        bad = [x.lower() for x in cfg["haric"]]
+        fx = [f for f in allfx if not any(x in (str(f.get("tournamentName", "")) + " " + str(f.get("categoryName", ""))).lower() for x in bad)]
+    else:
+        ids = {str(t["tournamentId"]) for t in tours}
+        fx = [f for f in allfx if str(f.get("tournamentId")) in ids]
+    # öncelik: seçili 52 lig önce gelir, sonra diğerleri; her grup kendi içinde saate göre
+    pri = {str(t["tournamentId"]) for t in tours}
+    fx.sort(key=lambda f: (str(f.get("tournamentId")) not in pri, f.get("startTime") or ""))
+    log(f"API'de {len(allfx)} maç var, alınacak {min(len(fx), cfg['maks_mac'])} maç" + (" (tüm ligler)." if cfg.get("tum_ligler") else " (seçili ligler)."))
     return fx[: cfg["maks_mac"]]
 
 
@@ -364,6 +371,106 @@ def main():
     finish(mode, fx, tours, names, cfg)
 
 
+# ---------------- site verisi ----------------
+SITE_MARKETS = [  # (API market adı, çizgi) -> (anahtar, Türkçe ad)
+    ("Full Time Result", 0, "ms", "Maç Sonucu"),
+    ("Double Chance Full Time", 0, "cs", "Çifte Şans"),
+    ("Over Under Full Time", 1.5, "au15", "1.5 Alt/Üst"),
+    ("Over Under Full Time", 2.5, "au25", "2.5 Alt/Üst"),
+    ("Over Under Full Time", 3.5, "au35", "3.5 Alt/Üst"),
+    ("Over Under Full Time", 4.5, "au45", "4.5 Alt/Üst"),
+    ("Both Teams To Score", 0, "kg", "Karşılıklı Gol"),
+    ("First Half Result", 0, "iy", "İlk Yarı Sonucu"),
+    ("Over Under First Half", 0.5, "iyau05", "İY 0.5 Alt/Üst"),
+    ("Over Under First Half", 1.5, "iyau15", "İY 1.5 Alt/Üst"),
+    ("European Handicap", 1.0, "h10", "Handikap (1:0)"),
+    ("European Handicap", -1.0, "h01", "Handikap (0:1)"),
+]
+SEL_TR = {"Over": "Üst", "Under": "Alt", "Yes": "Var", "No": "Yok", "2X": "X2", "1X": "1X", "12": "12"}
+SEL_ORDER = ["1", "X", "2", "1X", "12", "X2", "Alt", "Üst", "Var", "Yok"]
+
+
+def site_payload(fx, mk, lo, hi):
+    want = {}
+    for mid, m in mk.items():
+        if m.get("sportId", 10) != 10:
+            continue
+        for name, hc, key, tr in SITE_MARKETS:
+            if m.get("marketName") == name and abs(float(m.get("handicap") or 0) - hc) < 1e-9:
+                want[str(mid)] = (key, tr, {str(o["outcomeId"]): SEL_TR.get(o.get("outcomeName"), o.get("outcomeName")) for o in m.get("outcomes", [])})
+    order = [k for _, _, k, _ in SITE_MARKETS]
+    out = {}
+    for fid, f in fx.items():
+        st = parse_time(f.get("startTime"))
+        if not st or not (lo <= st <= hi):
+            continue
+        mkts = {}
+        for bk, bo in (f.get("bookmakerOdds") or {}).items():
+            for mid, md in ((bo or {}).get("markets") or {}).items():
+                if str(mid) not in want:
+                    continue
+                key, tr, onames = want[str(mid)]
+                slot = mkts.setdefault(key, {"k": key, "ad": tr, "o": {}})
+                for oid, od in (md.get("outcomes") or {}).items():
+                    pl = (od.get("players") or {}).get("0") or {}
+                    if not pl.get("price"):
+                        continue
+                    sel = onames.get(str(oid), str(oid))
+                    slot["o"].setdefault(bk, {})[sel] = [pl.get("open") or pl["price"], pl["price"]]
+        if not mkts:
+            continue
+        for m in mkts.values():
+            sels = {x for d in m["o"].values() for x in d}
+            m["s"] = sorted(sels, key=lambda x: SEL_ORDER.index(x) if x in SEL_ORDER else 99)
+            m["o"] = {bk: [d.get(x) for x in m["s"]] for bk, d in m["o"].items()}
+        out[fid] = {"id": fid, "t": f.get("startTime"), "ulke": f.get("categoryName", ""), "lig": f.get("tournamentName", ""),
+                    "ev": f.get("participant1Name", ""), "dep": f.get("participant2Name", ""),
+                    "m": sorted(mkts.values(), key=lambda m: order.index(m["k"]))}
+    return out
+
+
+def write_site(fx, mk, lo, hi, refreshed, stamp):
+    path = os.path.join(ROOT, "veri", "son.json")
+    old = {m["id"]: m for m in (rjson(path, {}) or {}).get("maclar", [])}
+    new = site_payload(fx, mk, lo, hi)
+    now_iso = NOW.strftime("%Y-%m-%dT%H:%M:%SZ")
+    merged = {}
+    for fid in set(old) | set(new):
+        o, n = old.get(fid), new.get(fid)
+        base = n or o
+        st = parse_time(base.get("t"))
+        if not st or st < NOW - dt.timedelta(hours=2):
+            continue  # başlamış/bitmiş maçlar atılır
+        if o and n:  # akşam çalışması: yenilenmeyen şirketlerin sabah oranları korunur
+            om = {m["k"]: m for m in o["m"]}
+            for m in n["m"]:
+                prev = om.get(m["k"])
+                if not prev:
+                    continue
+                for bk, vals in prev["o"].items():
+                    if bk in refreshed or bk in m["o"]:
+                        continue
+                    d = dict(zip(prev["s"], vals))
+                    for x in d:
+                        if x not in m["s"]:
+                            m["s"].append(x)
+                    m["o"][bk] = [d.get(x) for x in m["s"]]
+                for bk in list(m["o"]):
+                    if len(m["o"][bk]) < len(m["s"]):
+                        m["o"][bk] += [None] * (len(m["s"]) - len(m["o"][bk]))
+            known = {m["k"] for m in n["m"]}
+            n["m"] += [m for k, m in om.items() if k not in known]
+        merged[fid] = base
+    sirket_zaman = (rjson(path, {}) or {}).get("sirket_zaman", {})
+    for bk in refreshed:
+        sirket_zaman[bk] = now_iso
+    data = {"olusturma": now_iso, "sirket_zaman": sirket_zaman,
+            "maclar": sorted(merged.values(), key=lambda m: (m["t"], m["lig"]))}
+    wjson(path, data)
+    log(f"Site verisi yazıldı: {len(data['maclar'])} maç (avrupa/veri/son.json).")
+
+
+
 def finish(mode, fx, tours, names, cfg=None):
     stamp = NOW.astimezone(TR).strftime("%Y-%m-%d_%H%M")
     rows, cons = [], []
@@ -401,6 +508,8 @@ def finish(mode, fx, tours, names, cfg=None):
             c = {"tarih": base[0], "saat": base[1], "ulke": base[2], "lig": base[3], "ev": home, "deplasman": away, "fixtureId": fid}
             for mid, m in mk.items():
                 n = str(m.get("marketName", "")).lower()
+                if "team" in n or m.get("sportId", 10) != 10:
+                    continue  # takım gol çizgileri ve başka sporlar uzlaşıya girmez
                 key = None
                 if m.get("marketType") == "1x2" and m.get("period") == "fulltime" and "handicap" not in n and not any(b in n for b in BAD):
                     key = "ms"
@@ -443,6 +552,8 @@ def finish(mode, fx, tours, names, cfg=None):
             wjson(os.path.join(ROOT, "uzlasi", stamp + ".json"), cons)
             wjson(os.path.join(ROOT, "uzlasi", "son.json"), {"olusturma": stamp, "maclar": cons})
         log(f"Kaydedildi: {len({r[6] for r in rows})} maç, {len(rows)} oran satırı, {len(cons)} maç için uzlaşı fiyatı.")
+        refreshed = {bk for f in fx.values() for bk in (f.get("bookmakerOdds") or {})}
+        write_site(fx, mk, lo, hi, refreshed, stamp)
     lim, cnt = quota()
     log(f"Bu çalışmada {USED} istek harcandı." + (f" Aylık kullanım: {cnt}/{lim}." if lim else ""))
     idx = bookmaker_index()
