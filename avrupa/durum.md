@@ -1,16 +1,28 @@
-# Son çalışma: 2026-10-01_2257 (aksam)
+# Son çalışma: 2026-10-02_1514 (sabah)
 
-- Mod: aksam. Kota: 1/250
+- Mod: sabah. Kota: 2/250
 - Seçilen lig sayısı: 52
-- Şirketler: pinnacle, sbobet, bet365
-- API'de 414 maç var, alınacak 214 maç (tüm ligler).
-- id1002617673354162 (pinnacle,sbobet,bet365) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
-- id1002617673357136 (pinnacle,sbobet,bet365) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
-- id1002617673354164 (pinnacle,sbobet,bet365) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
-- pinnacle, sbobet, bet365: 214 maçta 283 şirket-maç oranı geldi.
-- Kaydedildi: 169 maç, 11858 oran satırı, 168 maç için uzlaşı fiyatı.
-- Site verisi yazıldı: 183 maç (avrupa/veri/son.json).
-- Bu çalışmada 1 istek harcandı. Aylık kullanım: 2/250.
+- Şirketler: pinnacle, sbobet, bet365, tipico, sisal.it, unibet, superbet, stoiximan, svenskaspel, winamax.fr, fdj, betano
+- API'de 1061 maç var, alınacak 600 maç (tüm ligler).
+- id1000018674172446 (pinnacle,sbobet,bet365) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
+- id1000018674172438 (pinnacle,sbobet,bet365) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
+- id1000072172120922 (pinnacle,sbobet,bet365) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
+- pinnacle, sbobet, bet365: 600 maçta 692 şirket-maç oranı geldi.
+- id1000001974980164 (tipico,sisal.it,unibet) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
+- id1000072172120922 (tipico,sisal.it,unibet) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
+- id1000001974975974 (tipico,sisal.it,unibet) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
+- tipico, sisal.it, unibet: 600 maçta 645 şirket-maç oranı geldi.
+- id1000032974835314 (superbet,stoiximan,svenskaspel) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
+- id1000032974835316 (superbet,stoiximan,svenskaspel) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
+- id1000032974835318 (superbet,stoiximan,svenskaspel) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
+- superbet, stoiximan, svenskaspel: 600 maçta 924 şirket-maç oranı geldi.
+- id1000072172120922 (winamax.fr,fdj,betano) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
+- id1000001974976016 (winamax.fr,fdj,betano) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
+- id1000001974980174 (winamax.fr,fdj,betano) alınamadı: HTTP 404: {"error":{"message":"No historical odds found.","code":"NOT_FOUND","details":"Please check the provided filters and try again."}}
+- winamax.fr, fdj, betano: 600 maçta 452 şirket-maç oranı geldi.
+- Kaydedildi: 474 maç, 152559 oran satırı, 474 maç için uzlaşı fiyatı.
+- Site verisi yazıldı: 492 maç (avrupa/veri/son.json).
+- Bu çalışmada 1 istek harcandı. Aylık kullanım: 3/250.
 
 ## Ayarlardaki şirketler
 
